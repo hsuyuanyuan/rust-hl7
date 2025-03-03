@@ -1,1 +1,66 @@
 # rust-hl7
+
+A Rust library for parsing and processing HL7 (Health Level 7) messages, including ADT (Admission, Discharge, Transfer) and ORU (Observation Result) messages.
+
+## Features
+
+- Parse HL7 messages into a structured format
+- Support for ADT (Admission, Discharge, Transfer) messages
+- Support for ORU (Observation Result) messages
+- Extract patient information, observations, and other important data
+
+## Usage
+
+```rust
+use rust_hl7::{Message, adt::AdtMessage, oru::OruMessage};
+
+// Parse an HL7 message
+let message_str = "MSH|^~\\&|SENDING_APP|...";
+let message = Message::parse(message_str).expect("Failed to parse message");
+
+// Check message type
+if message.is_adt() {
+    // Process as ADT message
+    let adt = AdtMessage::from_hl7(&message).expect("Failed to process ADT");
+    println!("Patient ID: {}", adt.patient_id);
+} else if message.is_oru() {
+    // Process as ORU message
+    let oru = OruMessage::from_hl7(&message).expect("Failed to process ORU");
+    println!("Patient ID: {}", oru.patient_id);
+    
+    // Access observations
+    for obs in &oru.observations {
+        println!("Test: {}, Value: {:?}", obs.test_id, obs.value);
+    }
+}
+```
+
+## Supported Message Types
+
+### ADT (Admission, Discharge, Transfer)
+
+ADT messages handle patient administrative data, including:
+
+- A01: Patient admission
+- A02: Patient transfer
+- A03: Patient discharge
+- A04: Patient registration
+- A08: Patient information update
+
+### ORU (Observation Result)
+
+ORU messages contain clinical observations and lab results, including:
+
+- R01: Unsolicited observation message
+
+## Build and Run
+
+```bash
+cargo build
+cargo run
+```
+
+## License
+
+MIT
+
