@@ -5,6 +5,9 @@ use thiserror::Error;
 #[cfg(test)]
 mod tests;
 
+// Include MLLP server implementation
+pub mod mllp;
+
 #[derive(Debug, Error)]
 pub enum HL7Error {
     #[error("Parse error: {0}")]
