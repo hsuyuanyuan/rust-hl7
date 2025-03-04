@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{Message, adt::AdtMessage, oru::OruMessage};
+    use crate::{Message, adt::AdtMessage, oru::OruMessage, rde::RdeMessage};
 
     #[test]
     fn test_parse_adt_message() {
@@ -15,6 +15,7 @@ PV1|1|I|2000^2012^01||||004777^ATTEND^AARON^A|||SUR||||ADM|A0|"#;
         assert_eq!(message.version, "2.5");
         assert!(message.is_adt());
         assert!(!message.is_oru());
+        assert!(!message.is_rde());
 
         let adt = AdtMessage::from_hl7(&message).unwrap();
         assert_eq!(adt.event_type, "A01");
@@ -37,6 +38,7 @@ OBX|2|NM|RBC^ERYTHROCYTES^L||4.5|10*6/uL|4.5-5.9|N|||F"#;
         assert_eq!(message.version, "2.5");
         assert!(!message.is_adt());
         assert!(message.is_oru());
+        assert!(!message.is_rde());
 
         let oru = OruMessage::from_hl7(&message).unwrap();
         assert_eq!(oru.patient_id, "12345");
@@ -57,5 +59,53 @@ OBX|2|NM|RBC^ERYTHROCYTES^L||4.5|10*6/uL|4.5-5.9|N|||F"#;
         assert_eq!(obs2.value, Some("4.5".to_string()));
         assert_eq!(obs2.units, Some("10*6/uL".to_string()));
         assert_eq!(obs2.reference_range, Some("4.5-5.9".to_string()));
+    }
+    
+    #[test]
+    fn test_parse_rde_message() {
+        let rde_message = r#"MSH|^~\&|PHARMACY|FACILITY|EHR|FACILITY|20230401123000||RDE^O11|MSG00003|P|2.5
+PID|1||12345^^^MRN||DOE^JOHN^^^^||19800101|M
+ORC|NW|ORD12345|||||||20230401123000|||
+RXE|509^MEDROL|2|4MG||TAB|BID||509^MEDROL|10|||||||||||20230401|20230407
+RXR|PO|ORAL|SWALLOW
+RXE|123^AMOXICILLIN|3|500MG||CAP|TID||123^AMOXICILLIN|21|||||||||||20230401|20230408
+RXR|PO|ORAL|SWALLOW"#;
+
+        let message = Message::parse(rde_message).unwrap();
+        assert_eq!(message.message_type, "RDE^O11");
+        assert_eq!(message.version, "2.5");
+        assert!(!message.is_adt());
+        assert!(!message.is_oru());
+        assert!(message.is_rde());
+
+        let rde = RdeMessage::from_hl7(&message).unwrap();
+        assert_eq!(rde.patient_id, "12345");
+        assert_eq!(rde.order_control, Some("NW".to_string()));
+        assert_eq!(rde.order_number, Some("ORD12345".to_string()));
+        assert_eq!(rde.medication_orders.len(), 2);
+        
+        // Check first medication order
+        let med1 = &rde.medication_orders[0];
+        assert_eq!(med1.rx_id, "RX1");
+        assert_eq!(med1.medication_id, "509");
+        assert_eq!(med1.medication_name, Some("MEDROL".to_string()));
+        assert_eq!(med1.strength, Some("4MG".to_string()));
+        assert_eq!(med1.form, Some("TAB".to_string()));
+        assert_eq!(med1.frequency, Some("BID".to_string()));
+        assert_eq!(med1.route, Some("SWALLOW".to_string()));
+        assert_eq!(med1.start_date, Some("20230401".to_string()));
+        assert_eq!(med1.stop_date, Some("20230407".to_string()));
+        
+        // Check second medication order
+        let med2 = &rde.medication_orders[1];
+        assert_eq!(med2.rx_id, "RX2");
+        assert_eq!(med2.medication_id, "123");
+        assert_eq!(med2.medication_name, Some("AMOXICILLIN".to_string()));
+        assert_eq!(med2.strength, Some("500MG".to_string()));
+        assert_eq!(med2.form, Some("CAP".to_string()));
+        assert_eq!(med2.frequency, Some("TID".to_string()));
+        assert_eq!(med2.route, Some("SWALLOW".to_string()));
+        assert_eq!(med2.start_date, Some("20230401".to_string()));
+        assert_eq!(med2.stop_date, Some("20230408".to_string()));
     }
 }
