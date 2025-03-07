@@ -30,6 +30,15 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Set up sentry integration
+    let _guard = sentry::init(("https://605b19c1cb65a806857c8691e1bd5d53@o4508883257196544.ingest.us.sentry.io/4508933895028736", sentry::ClientOptions {
+        release: sentry::release_name!(),
+        ..Default::default()
+    }));
+
+    // Sentry will capture this
+    panic!("Everything is on fire!");
+
     // Set up logging
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
