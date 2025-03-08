@@ -36,8 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     }));
 
-    // Sentry will capture this
-    panic!("Everything is on fire!");
+    // Removed intentional panic that was used for Sentry testing
 
     // Set up logging
     let subscriber = FmtSubscriber::builder()
