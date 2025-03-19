@@ -122,5 +122,4 @@ let message_handler = Arc::new(|message: Message| -> Result<Message, HL7Error> {
 
 ## License
 
-MIT
-
+Apache
