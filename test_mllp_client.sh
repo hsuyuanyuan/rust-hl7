@@ -24,6 +24,6 @@ echo "Sending HL7 message wrapped in MLLP frame..."
 
 # Use netcat to send the message and receive the response
 # Using echo -e to interpret escape sequences or printf to output the binary data
-printf "%s" "$MLLP_FRAME" | nc $HOST $PORT -q 1
+printf "%s" "$MLLP_FRAME" | nc $HOST $PORT
 
 echo "Message sent!"
