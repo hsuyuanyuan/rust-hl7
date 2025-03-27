@@ -4,8 +4,13 @@ use rust_hl7::{
     Message, HL7Error, adt::AdtMessage, oru::OruMessage, rde::RdeMessage,
 };
 use std::sync::Arc;
+use std::fs;
+use std::path::Path;
+use std::time::{Duration, SystemTime};
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use tracing_appender::{rolling, non_blocking};
+use tracing_appender::rolling::Rotation;
 
 #[derive(Parser)]
 #[command(name = "rust-hl7")]
@@ -36,12 +41,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     }));
 
-    // Removed intentional panic that was used for Sentry testing
+    // Define log directory
+    let log_dir = "logs";
+    
+    // Clean up old log files (older than 7 days)
+    if let Err(e) = cleanup_old_logs(log_dir, 7) {
+        eprintln!("Warning: Failed to clean up old log files: {}", e);
+    }
 
-    // Set up logging
+    // Set up logging with file output
+    // Create a rotating logger that rotates daily
+    let file_appender = rolling::RollingFileAppender::new(
+        Rotation::DAILY,
+        log_dir,
+        "rust-hl7.log",
+    );
+    
+    // Set up non-blocking writer
+    let (non_blocking_writer, _logging_guard) = non_blocking(file_appender);
+    
+    // Configure subscriber with non-blocking writer
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
+        .with_writer(non_blocking_writer)
         .finish();
+        
     tracing::subscriber::set_global_default(subscriber)
         .expect("Failed to set default subscriber");
 
@@ -206,6 +230,39 @@ RXR|||SWALLOW"#;
         }
         Err(e) => println!("Error parsing RDE message: {}", e),
     }
+}
+
+/// Cleans up log files older than the specified number of days
+fn cleanup_old_logs(log_dir: &str, days: u64) -> std::io::Result<()> {
+    let log_path = Path::new(log_dir);
+    if !log_path.exists() {
+        return Ok(());
+    }
+    
+    let max_age = Duration::from_secs(days * 24 * 60 * 60);
+    let now = SystemTime::now();
+    
+    for entry in fs::read_dir(log_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if let Ok(metadata) = fs::metadata(&path) {
+            if !metadata.is_file() {
+                continue;
+            }
+            
+            if let Ok(modified) = metadata.modified() {
+                if let Ok(duration) = now.duration_since(modified) {
+                    if duration > max_age {
+                        info!("Removing old log file: {}", path.display());
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(())
 }
 
 /// Runs an MLLP server on the specified address

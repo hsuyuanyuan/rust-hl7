@@ -19,3 +19,4 @@ futures = "0.3.30"   # For async utilities
 clap = { version = "4.4.13", features = ["derive"] } # For CLI argument parsing
 tracing = "0.1.40"   # For logging
 tracing-subscriber = "0.3.18" # For logging
+tracing-appender = "0.2"  # For file logging

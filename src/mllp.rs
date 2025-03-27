@@ -5,7 +5,7 @@ use thiserror::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::{Decoder, Encoder};
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 // MLLP specific constants
 const MLLP_START_BLOCK: u8 = 0x0B; // Vertical Tab
