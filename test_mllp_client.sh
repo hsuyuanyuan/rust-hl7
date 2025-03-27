@@ -16,7 +16,7 @@ PV1|1|I|2000^2012^01||||004777^ATTEND^AARON^A|||SUR||||ADM|A0|"
 MLLP_FRAME="${START_BLOCK}${HL7_MESSAGE}${END_BLOCK}${CR}"
 
 # Host and port for MLLP server
-HOST="127.0.0.1"
+HOST="18.208.115.20"  #"127.0.0.1"
 PORT="2575"
 
 echo "Connecting to MLLP server at $HOST:$PORT..."

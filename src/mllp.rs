@@ -153,7 +153,7 @@ async fn handle_connection(
         
         // Check for a complete MLLP frame
         if let Some(message_bytes) = extract_mllp_message(&mut read_buffer)? {
-            debug!("Received message ({} bytes)", message_bytes.len());
+            info!("Received message ({} bytes)", message_bytes.len());
             
             // Convert to string
             let message_str = match std::str::from_utf8(&message_bytes) {
@@ -179,7 +179,7 @@ async fn handle_connection(
                             
                             // Send the response
                             write_half.write_all(&mllp_response).await?;
-                            debug!("Sent response ({} bytes)", mllp_response.len());
+                            info!("Sent response ({} bytes)", mllp_response.len());
                         }
                         Err(e) => {
                             error!("Error processing message: {}", e);
