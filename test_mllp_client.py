@@ -6,6 +6,7 @@ import subprocess
 import threading
 import signal
 import os
+import argparse
 
 # MLLP special characters
 START_BLOCK = b'\x0B'  # VT - Vertical Tab (ASCII 11)
@@ -82,15 +83,21 @@ def send_message(host="127.0.0.1", port=2575):
 
 def main():
     """Run the test: start server, send message, cleanup"""
+    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='MLLP Client Test Script')
+    parser.add_argument('--host', default="127.0.0.1", help='Host address (default: 127.0.0.1)') # Use "18.208.115.20" for remote EC2
+    parser.add_argument('--port', type=int, default=2575, help='Port number (default: 2575)')
+    args = parser.parse_args()
+    
     server_process = start_server()
     
     try:
         # Give the server time to start
         time.sleep(1)
         
-        # Send a message
-        # send_message(host="127.0.0.1", port=2575)
-        send_message(host="18.208.115.20", port=2575) # send to remote EC2
+        # Send a message using the provided host
+        send_message(host=args.host, port=args.port)
         
     finally:
         # Cleanup: terminate the server process

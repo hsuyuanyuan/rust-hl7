@@ -92,7 +92,7 @@ EVN|A01|20230401123000
 PID|1||12345^^^MRN||DOE^JOHN^^^^||19800101|M||W|123 MAIN ST^^ANYTOWN^CA^12345||5551234|||||12345678
 NK1|1|DOE^JANE^^^^|SPOUSE|555-5678
 PV1|1|I|2000^2012^01||||004777^ATTEND^AARON^A|||SUR||||ADM|A0|"#;
-    
+
     // Example ORU message (lab results)
     let oru_message = r#"MSH|^~\&|LAB|FACILITY|EHR|FACILITY|20230401123000||ORU^R01|MSG00002|P|2.5
 PID|1||12345^^^MRN||DOE^JOHN^^^^||19800101|M
@@ -109,128 +109,133 @@ PID|1||12345^^^MRN||DOE^JOHN^^^^||19800101|M
 ORC|NW|ORD123456|||||^^^20230401^^R|
 RXE|AMOX500^AMOXICILLIN 500MG||500|MG|TAB|BID||||||30||SWALLOW||20230401|20230415
 RXR|||SWALLOW"#;
+
+    [adt_message, oru_message, rde_message].iter().for_each(|message| {
+        match parse_message(message) {
+            Ok(result) => println!("{}", result),
+            Err(e) => println!("Error parsing message: {}", e),
+        }
+    })
+}
+
+/// Parse an HL7 message string and return parsed message details
+fn parse_message(msg_str: &str) -> Result<String, HL7Error> {
+    let message = Message::parse(msg_str)?;
+    output_message_details(message)
+}
+fn output_message_details(message: Message) -> Result<String, HL7Error> {
+    let mut output = String::new();
     
-    // Process ADT message
-    match Message::parse(adt_message) {
-        Ok(message) => {
-            println!("Successfully parsed ADT message");
-            println!("Message type: {}", message.message_type);
-            println!("Version: {}", message.version);
-            
+    match message.message_type.as_str() {
+        "ADT^A01" => {
+            output.push_str("Successfully parsed ADT message\n");
+            output.push_str(&format!("Message type: {}\n", message.message_type));
+            output.push_str(&format!("Version: {}\n", message.version));
+
             // Process as ADT
-            match AdtMessage::from_hl7(&message) {
-                Ok(adt) => {
-                    println!("\nADT Message Details:");
-                    println!("Event type: {}", adt.event_type);
-                    println!("Patient ID: {}", adt.patient_id);
-                    if let Some(name) = adt.patient_name {
-                        println!("Patient name: {}", name);
-                    }
-                    if let Some(dob) = adt.date_of_birth {
-                        println!("Date of birth: {}", dob);
-                    }
-                    if let Some(gender) = adt.gender {
-                        println!("Gender: {}", gender);
-                    }
-                }
-                Err(e) => println!("Error processing ADT message: {}", e),
+            let adt = AdtMessage::from_hl7(&message)?;
+            
+            output.push_str("\nADT Message Details:\n");
+            output.push_str(&format!("Event type: {}\n", adt.event_type));
+            output.push_str(&format!("Patient ID: {}\n", adt.patient_id));
+            
+            if let Some(name) = adt.patient_name {
+                output.push_str(&format!("Patient name: {}\n", name));
+            }
+            
+            if let Some(dob) = adt.date_of_birth {
+                output.push_str(&format!("Date of birth: {}\n", dob));
+            }
+            
+            if let Some(gender) = adt.gender {
+                output.push_str(&format!("Gender: {}\n", gender));
             }
         }
-        Err(e) => println!("Error parsing ADT message: {}", e),
-    }
-    
-    // Process ORU message
-    match Message::parse(oru_message) {
-        Ok(message) => {
-            println!("\nSuccessfully parsed ORU message");
-            println!("Message type: {}", message.message_type);
-            println!("Version: {}", message.version);
-            
+        "ORU^R01" => {
+            output.push_str("\nSuccessfully parsed ORU message\n");
+            output.push_str(&format!("Message type: {}\n", message.message_type));
+            output.push_str(&format!("Version: {}\n", message.version));
+
             // Process as ORU
-            match OruMessage::from_hl7(&message) {
-                Ok(oru) => {
-                    println!("\nORU Message Details:");
-                    println!("Patient ID: {}", oru.patient_id);
-                    println!("Observations:");
-                    
-                    for (i, obs) in oru.observations.iter().enumerate() {
-                        println!("  Observation #{}:", i + 1);
-                        println!("    Test ID: {}", obs.test_id);
-                        
-                        if let Some(name) = &obs.test_name {
-                            println!("    Test name: {}", name);
-                        }
-                        
-                        if let Some(value) = &obs.value {
-                            println!("    Value: {}", value);
-                        }
-                        
-                        if let Some(units) = &obs.units {
-                            println!("    Units: {}", units);
-                        }
-                        
-                        if let Some(range) = &obs.reference_range {
-                            println!("    Reference range: {}", range);
-                        }
-                        
-                        if let Some(flags) = &obs.abnormal_flags {
-                            println!("    Abnormal flags: {}", flags);
-                        }
-                    }
+            let oru = OruMessage::from_hl7(&message)?;
+            
+            output.push_str("\nORU Message Details:\n");
+            output.push_str(&format!("Patient ID: {}\n", oru.patient_id));
+            output.push_str("Observations:\n");
+
+            for (i, obs) in oru.observations.iter().enumerate() {
+                output.push_str(&format!("  Observation #{}:\n", i + 1));
+                output.push_str(&format!("    Test ID: {}\n", obs.test_id));
+
+                if let Some(name) = &obs.test_name {
+                    output.push_str(&format!("    Test name: {}\n", name));
                 }
-                Err(e) => println!("Error processing ORU message: {}", e),
+
+                if let Some(value) = &obs.value {
+                    output.push_str(&format!("    Value: {}\n", value));
+                }
+
+                if let Some(units) = &obs.units {
+                    output.push_str(&format!("    Units: {}\n", units));
+                }
+
+                if let Some(range) = &obs.reference_range {
+                    output.push_str(&format!("    Reference range: {}\n", range));
+                }
+
+                if let Some(flags) = &obs.abnormal_flags {
+                    output.push_str(&format!("    Abnormal flags: {}\n", flags));
+                }
             }
         }
-        Err(e) => println!("Error parsing ORU message: {}", e),
+        "RDE^O11" => {
+            output.push_str("\nSuccessfully parsed RDE message\n");
+            output.push_str(&format!("Message type: {}\n", message.message_type));
+            output.push_str(&format!("Version: {}\n", message.version));
+
+            // Process as RDE
+            let rde = RdeMessage::from_hl7(&message)?;
+            
+            output.push_str("\nRDE Message Details:\n");
+            output.push_str(&format!("Patient ID: {}\n", rde.patient_id));
+            
+            if let Some(order_num) = &rde.order_number {
+                output.push_str(&format!("Order number: {}\n", order_num));
+            }
+            
+            output.push_str("Medication Orders:\n");
+
+            for (i, med) in rde.medication_orders.iter().enumerate() {
+                output.push_str(&format!("  Medication #{}:\n", i + 1));
+                output.push_str(&format!("    ID: {}\n", med.medication_id));
+
+                if let Some(name) = &med.medication_name {
+                    output.push_str(&format!("    Name: {}\n", name));
+                }
+
+                if let Some(strength) = &med.strength {
+                    output.push_str(&format!("    Strength: {}\n", strength));
+                }
+
+                if let Some(form) = &med.form {
+                    output.push_str(&format!("    Form: {}\n", form));
+                }
+
+                if let Some(frequency) = &med.frequency {
+                    output.push_str(&format!("    Frequency: {}\n", frequency));
+                }
+
+                if let Some(route) = &med.route {
+                    output.push_str(&format!("    Route: {}\n", route));
+                }
+            }
+        }
+        _ => {
+            output.push_str(&format!("Unknown message type: {}\n", message.message_type));
+        }
     }
     
-    // Process RDE message
-    match Message::parse(rde_message) {
-        Ok(message) => {
-            println!("\nSuccessfully parsed RDE message");
-            println!("Message type: {}", message.message_type);
-            println!("Version: {}", message.version);
-            
-            // Process as RDE
-            match RdeMessage::from_hl7(&message) {
-                Ok(rde) => {
-                    println!("\nRDE Message Details:");
-                    println!("Patient ID: {}", rde.patient_id);
-                    if let Some(order_num) = &rde.order_number {
-                        println!("Order number: {}", order_num);
-                    }
-                    println!("Medication Orders:");
-                    
-                    for (i, med) in rde.medication_orders.iter().enumerate() {
-                        println!("  Medication #{}:", i + 1);
-                        println!("    ID: {}", med.medication_id);
-                        
-                        if let Some(name) = &med.medication_name {
-                            println!("    Name: {}", name);
-                        }
-                        
-                        if let Some(strength) = &med.strength {
-                            println!("    Strength: {}", strength);
-                        }
-                        
-                        if let Some(form) = &med.form {
-                            println!("    Form: {}", form);
-                        }
-                        
-                        if let Some(frequency) = &med.frequency {
-                            println!("    Frequency: {}", frequency);
-                        }
-                        
-                        if let Some(route) = &med.route {
-                            println!("    Route: {}", route);
-                        }
-                    }
-                }
-                Err(e) => println!("Error processing RDE message: {}", e),
-            }
-        }
-        Err(e) => println!("Error parsing RDE message: {}", e),
-    }
+    Ok(output)
 }
 
 /// Cleans up log files older than the specified number of days
@@ -274,6 +279,8 @@ async fn run_mllp_server(address: &str) -> Result<(), MllpError> {
     let message_handler = Arc::new(|message: Message| -> Result<Message, HL7Error> {
         // Log the received message type
         info!("Received message of type: {}", message.message_type);
+
+        println!("{}", output_message_details(message.to_owned())?);
         
         // In a real application, you would process the message here
         // For this example, we'll just echo it back
