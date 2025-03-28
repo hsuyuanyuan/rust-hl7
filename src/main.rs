@@ -28,7 +28,7 @@ enum Commands {
     /// Start the MLLP server
     Server {
         /// Address to bind the server to
-        #[arg(short, long, default_value = "127.0.0.1:2575")]
+        #[arg(short, long, default_value = "0.0.0.0:2575")] // Note: original = 127.0.0.1, only accept conn from localhost
         address: String,
     },
 }

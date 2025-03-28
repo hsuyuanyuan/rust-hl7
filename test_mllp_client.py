@@ -89,7 +89,8 @@ def main():
         time.sleep(1)
         
         # Send a message
-        send_message()
+        # send_message(host="127.0.0.1", port=2575)
+        send_message(host="18.208.115.20", port=2575) # send to remote EC2
         
     finally:
         # Cleanup: terminate the server process
