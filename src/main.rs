@@ -128,47 +128,47 @@ fn output_message_details(message: Message) -> Result<String, HL7Error> {
     
     match message.message_type.as_str() {
         "ADT^A01" => {
-            output.push_str("Successfully parsed ADT message\n");
-            output.push_str(&format!("Message type: {}\n", message.message_type));
-            output.push_str(&format!("Version: {}\n", message.version));
+            output.push_str("Successfully parsed ADT message: ");
+            output.push_str(&format!("Message type={} ", message.message_type));
+            output.push_str(&format!("Version={} ", message.version));
 
             // Process as ADT
             let adt = AdtMessage::from_hl7(&message)?;
             
-            output.push_str("\nADT Message Details:\n");
-            output.push_str(&format!("Event type: {}\n", adt.event_type));
-            output.push_str(&format!("Patient ID: {}\n", adt.patient_id));
+            output.push_str("ADT Message Details: ");
+            output.push_str(&format!("Event type={} ", adt.event_type));
+            output.push_str(&format!("Patient ID={} ", adt.patient_id));
             
             if let Some(name) = adt.patient_name {
-                output.push_str(&format!("Patient name: {}\n", name));
+                output.push_str(&format!("Patient name={} ", name));
             }
             
             if let Some(dob) = adt.date_of_birth {
-                output.push_str(&format!("Date of birth: {}\n", dob));
+                output.push_str(&format!("Date of birth={} ", dob));
             }
             
             if let Some(gender) = adt.gender {
-                output.push_str(&format!("Gender: {}\n", gender));
+                output.push_str(&format!("Gender={} ", gender));
             }
         }
         "ORU^R01" => {
-            output.push_str("\nSuccessfully parsed ORU message\n");
-            output.push_str(&format!("Message type: {}\n", message.message_type));
-            output.push_str(&format!("Version: {}\n", message.version));
+            output.push_str("Successfully parsed ORU message: ");
+            output.push_str(&format!("Message type={} ", message.message_type));
+            output.push_str(&format!("Version={} ", message.version));
 
             // Process as ORU
             let oru = OruMessage::from_hl7(&message)?;
             
-            output.push_str("\nORU Message Details:\n");
-            output.push_str(&format!("Patient ID: {}\n", oru.patient_id));
-            output.push_str("Observations:\n");
+            output.push_str("ORU Message Details: ");
+            output.push_str(&format!("Patient ID={} ", oru.patient_id));
+            output.push_str("Observations: ");
 
             for (i, obs) in oru.observations.iter().enumerate() {
-                output.push_str(&format!("  Observation #{}:\n", i + 1));
-                output.push_str(&format!("    Test ID: {}\n", obs.test_id));
+                output.push_str(&format!("  Observation#{}", i + 1));
+                output.push_str(&format!("    Test ID={}", obs.test_id));
 
                 if let Some(name) = &obs.test_name {
-                    output.push_str(&format!("    Test name: {}\n", name));
+                    output.push_str(&format!("    Test name={}\n", name));
                 }
 
                 if let Some(value) = &obs.value {
@@ -280,7 +280,7 @@ async fn run_mllp_server(address: &str) -> Result<(), MllpError> {
         // Log the received message type
         info!("Received message of type: {}", message.message_type);
 
-        println!("{}", output_message_details(message.to_owned())?);
+        info!("Message details: {}", output_message_details(message.to_owned())?);
         
         // In a real application, you would process the message here
         // For this example, we'll just echo it back
