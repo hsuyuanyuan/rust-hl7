@@ -14,7 +14,14 @@ END_BLOCK = b'\x1C'    # FS - File Separator (ASCII 28)
 CR = b'\x0D'           # CR - Carriage Return (ASCII 13)
 
 # Sample HL7 message (ADT-A01)
-HL7_MESSAGE = b"""MSH|^~\\&|SENDING_APP|SENDING_FACILITY|RECEIVING_APP|RECEIVING_FACILITY|20230401123000||ADT^A01|MSG00001|P|2.5
+HL7_MESSAGE_GOOD = b"""MSH|^~\\&|SENDING_APP|SENDING_FACILITY|RECEIVING_APP|RECEIVING_FACILITY|20230401123000||ADT^A01|MSG00001|P|2.5
+EVN|A01|20230401123000
+PID|1||12345^^^MRN||DOE^JOHN^^^^||19800101|M||W|123 MAIN ST^^ANYTOWN^CA^12345||5551234|||||12345678
+NK1|1|DOE^JANE^^^^|SPOUSE|555-5678
+PV1|1|I|2000^2012^01||||004777^ATTEND^AARON^A|||SUR||||ADM|A0|"""
+
+# wrong msg with head MSG
+HL7_MESSAGE_WRONG_MSH = b"""MSG|^~\\&|SENDING_APP|SENDING_FACILITY|RECEIVING_APP|RECEIVING_FACILITY|20230401123000||ADT^A01|MSG00001|P|2.5
 EVN|A01|20230401123000
 PID|1||12345^^^MRN||DOE^JOHN^^^^||19800101|M||W|123 MAIN ST^^ANYTOWN^CA^12345||5551234|||||12345678
 NK1|1|DOE^JANE^^^^|SPOUSE|555-5678
@@ -31,12 +38,16 @@ def start_server():
     time.sleep(2)
     return server_process
 
-def send_message(host="127.0.0.1", port=2575):
+def send_messages(host="127.0.0.1", port=2575):
+    for msg in [HL7_MESSAGE_GOOD, HL7_MESSAGE_WRONG_MSH]:
+        _send_message(msg, host, port)
+
+def _send_message(msg, host="127.0.0.1", port=2575):
     """Send an HL7 message wrapped in MLLP frame to the server"""
     print(f"Connecting to MLLP server at {host}:{port}...")
     
     # Wrap message in MLLP frame
-    mllp_frame = START_BLOCK + HL7_MESSAGE + END_BLOCK + CR
+    mllp_frame = START_BLOCK + msg + END_BLOCK + CR
     
     try:
         # Create a socket connection to the server
@@ -97,7 +108,7 @@ def main():
         time.sleep(1)
         
         # Send a message using the provided host
-        send_message(host=args.host, port=args.port)
+        send_messages(host=args.host, port=args.port)
         
     finally:
         # Cleanup: terminate the server process
